@@ -432,14 +432,31 @@
             playSound('zap');
         });
 
+        // CHÚ THÍCH: Nerf Rainbow Combo - Chỉ biến đổi 5 kẹo trên bàn
         document.getElementById('skill-combo').addEventListener('click', () => {
             if(skillComboUsed || skillBombUsed || isProcessing || moves <= 0) return;
             skillComboUsed = true;
             document.getElementById('skill-combo').disabled = true;
             document.getElementById('skill-bomb').disabled = true; 
             
-            levelConfig.specialDropRate = Math.min(0.20, (levelConfig.specialDropRate || 0) + 0.15);
-            levelConfig.fishDropRate = Math.min(0.15, (levelConfig.fishDropRate || 0) + 0.10); 
+            let validIdx = [];
+            for(let i=0; i<totalCells; i++){
+                if(board[i] && board[i].active && board[i].color !== 'none' && !board[i].wood && board[i].bubblegum === 0 && board[i].special === 'none') {
+                    validIdx.push(i);
+                }
+            }
+            
+            let targets = [];
+            validIdx.sort(() => Math.random() - 0.5);
+            targets = validIdx.slice(0, Math.min(5, validIdx.length)); // Tối đa 5 viên
+            
+            const comboTypes = ['striped-h', 'striped-v', 'wrapped', 'fish'];
+            targets.forEach(idx => {
+                board[idx].special = comboTypes[Math.floor(Math.random() * comboTypes.length)];
+                board[idx].scale = 1.4; 
+                setTimeout(() => { if(board[idx]) board[idx].scale = 1; }, 300);
+                triggerParticles(idx);
+            });
             
             playSound('laser');
 
@@ -1369,8 +1386,104 @@
             setTimeout(() => {
                 let matches = findMatches();
                 if(matches.all.size > 0) processMatches(matches, -1, -1);
-                else { isProcessing = false; checkWinLose(); resetHintTimer(); }
+                else { 
+                    isProcessing = false; 
+                    checkWinLose(); 
+                    // Kiểm tra hết nước đi nếu không bị hiện màn hình thắng thua
+                    if (!document.getElementById('overlay').style.display || document.getElementById('overlay').style.display === 'none') {
+                        checkDeadlock(); 
+                    }
+                    resetHintTimer(); 
+                }
             }, 350); 
+        }
+
+        // CHÚ THÍCH: Gộp chung thuật toán tìm nước đi để xài cho cả 2 tính năng (Hint & Deadlock)
+        function getPossibleMove() {
+            for(let i=0; i<totalCells; i++) {
+                if(!board[i] || !board[i].active||board[i].color==='none'||board[i].wood||board[i].bubblegum>0) continue;
+                
+                // Thử đổi sang phải
+                if(i % width < width - 1 && board[i+1] && board[i+1].active && board[i+1].color !== 'none' && !board[i+1].wood && board[i+1].bubblegum === 0) {
+                    if(board[i].special === 'color-bomb' || board[i+1].special === 'color-bomb') return [i, i+1];
+                    let tc=board[i].color, ts=board[i].special; board[i].color=board[i+1].color; board[i].special=board[i+1].special; board[i+1].color=tc; board[i+1].special=ts;
+                    let matches = findMatches();
+                    tc=board[i].color; ts=board[i].special; board[i].color=board[i+1].color; board[i].special=board[i+1].special; board[i+1].color=tc; board[i+1].special=ts;
+                    if(matches.all.size>0) return [i, i+1];
+                }
+                // Thử đổi xuống dưới
+                if(i < totalCells - width && board[i+width] && board[i+width].active && board[i+width].color !== 'none' && !board[i+width].wood && board[i+width].bubblegum === 0) {
+                    if(board[i].special === 'color-bomb' || board[i+width].special === 'color-bomb') return [i, i+width];
+                    let tc=board[i].color, ts=board[i].special; board[i].color=board[i+width].color; board[i].special=board[i+width].special; board[i+width].color=tc; board[i+width].special=ts;
+                    let matches = findMatches();
+                    tc=board[i].color; ts=board[i].special; board[i].color=board[i+width].color; board[i].special=board[i+width].special; board[i+width].color=tc; board[i+width].special=ts; 
+                    if(matches.all.size>0) return [i, i+width];
+                }
+            }
+            return null;
+        }
+
+        // CHÚ THÍCH: Hệ thống kiểm tra và xáo trộn lại kẹo nếu bị deadlock
+        function checkDeadlock() {
+            if (moves <= 0 || isProcessing) return;
+            let move = getPossibleMove();
+            if (!move) {
+                isProcessing = true; 
+                let msg = document.createElement('div');
+                msg.innerText = "HẾT ĐƯỜNG!\nĐANG TRỘN LẠI...";
+                msg.style.position = 'absolute';
+                msg.style.color = '#fff';
+                msg.style.fontSize = 'clamp(1.5rem, 5vw, 2.5rem)';
+                msg.style.fontWeight = '900';
+                msg.style.textShadow = '3px 3px 0 #2c3e50, 0 5px 15px rgba(0,0,0,0.5)';
+                msg.style.zIndex = '300';
+                msg.style.top = '50%';
+                msg.style.left = '50%';
+                msg.style.textAlign = 'center';
+                msg.style.transform = 'translate(-50%, -50%)';
+                msg.style.pointerEvents = 'none';
+                document.body.appendChild(msg);
+
+                setTimeout(() => {
+                    msg.remove();
+                    shuffleBoard();
+                }, 1500);
+            }
+        }
+
+        function shuffleBoard() {
+            let movableCandies = [];
+            for(let i=0; i<totalCells; i++) {
+                if(board[i] && board[i].active && board[i].color !== 'none' && !board[i].wood && board[i].bubblegum === 0) {
+                    movableCandies.push({color: board[i].color, special: board[i].special});
+                }
+            }
+            
+            // Thuật toán trộn mảng
+            for (let i = movableCandies.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [movableCandies[i], movableCandies[j]] = [movableCandies[j], movableCandies[i]];
+            }
+
+            let idx = 0;
+            for(let i=0; i<totalCells; i++) {
+                if(board[i] && board[i].active && board[i].color !== 'none' && !board[i].wood && board[i].bubblegum === 0) {
+                    board[i].color = movableCandies[idx].color;
+                    board[i].special = movableCandies[idx].special;
+                    board[i].scale = 0; // Animation pop in
+                    idx++;
+                }
+            }
+            
+            setTimeout(() => {
+                let matches = findMatches();
+                if(matches.all.size > 0) processMatches(matches, -1, -1);
+                else {
+                    isProcessing = false;
+                    checkDeadlock(); // Trộn lại nếu vẫn hết đường
+                    resetHintTimer();
+                }
+            }, 500);
         }
 
         function resetHintTimer() {
@@ -1382,24 +1495,7 @@
 
         function showHint() {
             if(isProcessing) return;
-            let move = null;
-            for(let i=0; i<totalCells && !move; i++) {
-                if(!board[i] || !board[i].active||board[i].color==='none'||board[i].wood||board[i].bubblegum>0) continue;
-                if(board[i].special === 'color-bomb') {
-                    if(i % width < width - 1 && board[i+1] && board[i+1].active && board[i+1].color!=='none'&&!board[i+1].wood&&board[i+1].bubblegum===0) move=[i, i+1];
-                    else if(i < totalCells - width && board[i+width] && board[i+width].active && board[i+width].color!=='none'&&!board[i+width].wood&&board[i+width].bubblegum===0) move=[i, i+width];
-                }
-                if(i % width < width - 1 && board[i+1] && board[i+1].active && !board[i+1].wood && board[i+1].bubblegum===0) {
-                    let tc=board[i].color, ts=board[i].special; board[i].color=board[i+1].color; board[i].special=board[i+1].special; board[i+1].color=tc; board[i+1].special=ts;
-                    if(findMatches().all.size>0) move=[i, i+1];
-                    tc=board[i].color; ts=board[i].special; board[i].color=board[i+1].color; board[i].special=board[i+1].special; board[i+1].color=tc; board[i+1].special=ts;
-                }
-                if(!move && i < totalCells - width && board[i+width] && board[i+width].active && !board[i+width].wood && board[i+width].bubblegum===0) {
-                    let tc=board[i].color, ts=board[i].special; board[i].color=board[i+width].color; board[i].special=board[i+width].special; board[i+width].color=tc; board[i+width].special=ts;
-                    if(findMatches().all.size>0) move=[i, i+width];
-                    tc=board[i].color; ts=board[i].special; board[i].color=board[i+width].color; board[i].special=board[i+width].special; board[i+width].color=tc; board[i+width].special=ts; 
-                }
-            }
+            let move = getPossibleMove();
             if(move) { board[move[0]].isHint = true; board[move[1]].isHint = true; }
         }
 
