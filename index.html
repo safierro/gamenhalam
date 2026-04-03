@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kẹo Ke Ba gai - Ultimate Combos Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+
+        body {
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; font-family: 'Nunito', sans-serif;
+            flex-direction: column; overflow: hidden; font-weight: 800;
+            transition: background 1.5s ease-in-out;
+            touch-action: none;
+            background-color: #ff9a9e; 
+        }
+        body.theme-0 { background: linear-gradient(180deg, #ff9a9e 0%, #fecfef 40%, #ffc3a0 100%); } 
+        body.theme-1 { background: linear-gradient(180deg, #89f7fe 0%, #66a6ff 100%); } 
+        body.theme-2 { background: linear-gradient(180deg, #ffecd2 0%, #fcb69f 100%); } 
+
+        h1 {
+            color: #fff; text-shadow: 4px 4px 0 #ff4757, -2px -2px 0 #ff4757, 2px -2px 0 #ff4757, -2px 2px 0 #ff4757, 2px 2px 0 #ff4757, 0 15px 25px rgba(0,0,0,0.2);
+            font-size: clamp(2rem, 5vw, 3.8rem); margin: 0 0 10px 0; letter-spacing: 2px; text-align: center; z-index: 1;
+        }
+
+        .top-controls { position: absolute; top: 15px; right: 20px; display: flex; gap: 8px; align-items: center; z-index: 200; }
+        .btn-control { 
+            background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%); border: 3px solid #fff; border-radius: 50%; 
+            width: 45px; height: 45px; font-size: 1.3rem; cursor: pointer; display: flex; justify-content: center; align-items: center; 
+            box-shadow: 0 4px 0 #ff4757, 0 8px 10px rgba(0,0,0,0.2); transition: transform 0.1s; padding: 0;
+        }
+        .btn-control:active { transform: translateY(4px); box-shadow: 0 0 0 #ff4757; }
+        .vol-slider { width: 80px; accent-color: #ff4757; }
+
+        .dashboard { 
+            display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; z-index: 1; 
+            width: 100%; max-width: 600px; padding: 0 10px; box-sizing: border-box;
+        }
+        .panel { 
+            background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%); padding: 8px 15px; 
+            border-radius: 20px; font-size: clamp(0.85rem, 2vw, 1.1rem); color: #ff4757; 
+            box-shadow: 0 4px 0 rgba(255, 105, 180, 0.4), 0 8px 10px rgba(0,0,0,0.1); border: 3px solid #fff; 
+            text-align: center; flex: 1; min-width: 70px; font-weight: 800; 
+        }
+        .panel span { display: block; font-size: clamp(1.2rem, 3vw, 1.8rem); color: #2c3e50; font-weight: 900; line-height: 1.2; margin-top: 2px;}
+
+        .canvas-container {
+            background: rgba(255, 255, 255, 0.4); padding: clamp(6px, 2vw, 12px); 
+            border-radius: 20px; border: 4px solid rgba(255, 255, 255, 0.9); 
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15), inset 0 0 15px rgba(255,255,255,0.8); 
+            position: relative; margin: 0 10px; touch-action: none;
+        }
+        
+        canvas {
+            background-color: rgba(255, 255, 255, 0.2); border-radius: 12px;
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.05); display: block;
+            transform: translateZ(0); will-change: transform;
+        }
+
+        .overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; flex-direction: column; border-radius: 15px; z-index: 100; border: 4px solid #fff;}
+        .overlay h2 { font-size: clamp(2.5rem, 8vw, 4rem); margin: 0; text-align: center; text-shadow: 3px 3px 0 #fff, 0 8px 15px rgba(0,0,0,0.2);}
+        .win-text { color: #ff4757; } .lose-text { color: #2c3e50; } .start-text { color: #be2edd; }
+        
+        .btn-restart { 
+            margin-top: 25px; padding: 12px 30px; font-size: clamp(1.2rem, 3vw, 1.6rem); 
+            font-weight: 900; font-family: inherit; background: linear-gradient(180deg, #ff9a9e 0%, #ff4757 100%); 
+            color: white; border: 4px solid #fff; border-radius: 30px; cursor: pointer; 
+            box-shadow: 0 6px 0 #c0392b; transition: transform 0.1s; pointer-events: auto;
+        }
+        .btn-restart:active { transform: translateY(6px); box-shadow: none; }
+        
+        .modal-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 1000; display: none; justify-content: center; align-items: center; }
+        .modal-content { background: linear-gradient(180deg, #fff 0%, #f1f2f6 100%); padding: clamp(15px, 4vw, 25px); border-radius: 20px; width: 90%; max-width: 450px; border: 4px solid #fff; box-shadow: 0 15px 40px rgba(0,0,0,0.3); text-align: left; color: #2c3e50; font-size: clamp(0.9rem, 2.5vw, 1.05rem); max-height: 80vh; overflow-y: auto; }
+        .modal-content h2 { color: #ff4757; text-align: center; margin-top: 0; font-size: clamp(1.8rem, 5vw, 2.2rem);}
+        .modal-content ul { list-style: none; padding: 0; margin: 0; }
+        .modal-content li { margin-bottom: 10px; line-height: 1.4; background: #fff; padding: 10px; border-radius: 12px; border: 2px solid #eee;}
+        .close-btn { display: block; width: 100%; padding: 12px; margin-top: 20px; background: linear-gradient(180deg, #ff7675 0%, #d63031 100%); color: white; border: 3px solid #fff; border-radius: 15px; font-size: clamp(1.2rem, 3vw, 1.4rem); font-weight: 900; cursor: pointer; box-shadow: 0 5px 0 #a00000;}
+
+        /* BẢNG CHỌN MÀN CHƠI */
+        .level-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px; }
+        .level-btn { 
+            background: linear-gradient(180deg, #7ed6df 0%, #22a6b3 100%); color: white; border: 2px solid #fff; 
+            border-radius: 12px; padding: 15px 0; font-size: 1.2rem; font-weight: 900; cursor: pointer; 
+            box-shadow: 0 4px 0 #0984e3; text-align: center; transition: transform 0.1s;
+        }
+        .level-btn:active { transform: translateY(4px); box-shadow: none; }
+        .level-btn.locked { background: #dcdde1; color: #7f8fa6; box-shadow: 0 4px 0 #7f8fa6; cursor: not-allowed; }
+
+        @media (max-width: 600px) {
+            .top-controls { top: 10px; right: 10px; transform: scale(0.85); transform-origin: top right;}
+            .panel { flex-basis: 40%; padding: 5px; } 
+            .level-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+    </style>
+</head>
+<body class="theme-0" id="game-body">
+
+    <div class="top-controls">
+        <button class="btn-control" id="btn-levels" title="Chọn Màn">🗺️</button>
+        <button class="btn-control" id="btn-help" title="Hướng Dẫn">❓</button>
+        <button class="btn-control" id="btn-music" title="Bật/Tắt Nhạc">🎵</button>
+        <button class="btn-control" id="btn-sfx" title="Bật/Tắt Hiệu Ứng">🔊</button>
+        <input type="range" id="volume" class="vol-slider" min="0" max="1" step="0.1" value="0.5">
+    </div>
+
+    <div class="modal-bg" id="help-modal">
+        <div class="modal-content">
+            <h2>Bí Kíp Kẹo Ngọt</h2>
+            <ul>
+                <li><strong>Ghi điểm:</strong> Ghép 3 kẹo cùng màu.</li>
+                <li><strong>Kẹo Sọc:</strong> Ghép 4 viên. Nổ quét sạch hàng/cột.</li>
+                <li><strong>Kẹo Gói:</strong> Ghép hình L/T. Nổ bung vùng 3x3.</li>
+                <li><strong>Kẹo Cá:</strong> Ghép hình vuông 2x2. Cá bay tìm mục tiêu.</li>
+                <li><strong>Color Bomb:</strong> Ghép 5 viên. Bắn tia Laser phá sạch 1 màu.</li>
+                <li>🌟 <strong>Mẹo Combo:</strong> Hãy thử ghép 2 kẹo đặc biệt với nhau để tạo Siêu Nổ!</li>
+            </ul>
+            <button class="close-btn" id="btn-close-help">Đã Hiểu!</button>
+        </div>
+    </div>
+
+    <!-- GIAO DIỆN CHỌN MÀN CHƠI -->
+    <div class="modal-bg" id="level-modal">
+        <div class="modal-content">
+            <h2>Chọn Màn Chơi</h2>
+            <div class="level-grid" id="level-container"></div>
+            <button class="close-btn" id="btn-close-levels">Đóng</button>
+        </div>
+    </div>
+
+    <h1>Kẹo Ke Ba gai</h1>
+    
+    <div class="dashboard">
+        <div class="panel">Màn Chơi <br><span id="level">1</span></div>
+        <div class="panel">Nhiệm Vụ <br><span id="goal">Điểm<br>5000</span></div>
+        <div class="panel">Điểm Số <br><span id="score">0</span></div>
+        <div class="panel">Lượt Đi <br><span id="moves">20</span></div>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="gameCanvas"></canvas>
+        <div class="overlay" id="overlay">
+            <h2 id="msg-title" class="start-text">Sẵn Sàng?</h2>
+            <button class="btn-restart" id="btn-action">Chơi Ngay</button>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================
+           KHỞI TẠO BIẾN HỆ THỐNG & LƯU TRỮ (SAVE GAME)
+           ========================================== */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false }); 
+        const width = 8;
+        let cellSize = 60;
+        let padding = 4;
+        let logicalWidth = 0;
+        
+        let board = [];
+        let particles = [];
+        let lasers = [];
+        let explosions = []; 
+        let score = 0, moves = 20, missionCurrent = 0, isProcessing = false;
+        
+        // HỆ THỐNG LƯU TRỮ LOCALSTORAGE
+        const MAX_TOTAL_LEVELS = 30; 
+        let maxUnlockedLevel = parseInt(localStorage.getItem('keoKeBaGai_MaxLevel')) || 1;
+        let currentLevel = maxUnlockedLevel; 
+        
+        let levelConfig = {};
+        let touchStartIdx = -1, touchStartX = 0, touchStartY = 0;
+        let hintTimer = null;
+        let gameActionState = 'START'; 
+
+        const candyColors = ['red', 'yellow', 'blue', 'green', 'purple', 'orange'];
+        const hexColors = {
+            'red': ['#ff7979', '#eb4d4b'], 'yellow': ['#f6e58d', '#f9ca24'],
+            'blue': ['#7ed6df', '#22a6b3'], 'green': ['#badc58', '#6ab04c'],
+            'purple': ['#e056fd', '#be2edd'], 'orange': ['#ffbe76', '#f0932b'],
+            'bomb': ['#2f3640', '#576574'], 'wood': ['#d2691e', '#8d6e63']
+        };
+
+        /* ==========================================
+           HỆ THỐNG NHẠC MP3 & ÂM THANH SFX
+           ========================================== */
+        // 1. Danh sách nhạc nền (File từ máy của bạn)
+        const mp3Tracks = [
+            'Phùng Trương Hồ Điệp ( Uyên Ương Hồ Điệp Mộng Parody ) - OTP Phùng Đại Nhân x Trương Hộ Vệ - YouTube.mp3',
+            'Perfect_Board_Clear.mp3',
+            'quen-di-cau-chuyen-kho-ga.mp3'
+        ];
+
+        // 2. Khởi tạo Trình phát nhạc nền MP3
+        let bgmPlayer = new Audio();
+        bgmPlayer.loop = true; // Lặp lại khi hết bài
+
+        // 3. Hệ thống Audio Context cho các âm thanh hiệu ứng (SFX)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx, masterGain, isMusicMuted = false, isSfxMuted = false, currentVolume = 0.5;
+        const volumeSlider = document.getElementById('volume');
+        const btnMusic = document.getElementById('btn-music');
+        const btnSfx = document.getElementById('btn-sfx');
+        
+        // Sự kiện thanh trượt âm lượng
+        volumeSlider.addEventListener('input', (e) => {
+            currentVolume = parseFloat(e.target.value);
+            if(masterGain) masterGain.gain.value = isSfxMuted ? 0 : currentVolume;
+            
+            // Điều chỉnh âm lượng nhạc nền MP3
+            bgmPlayer.volume = isMusicMuted ? 0 : currentVolume; 
+            
+            btnMusic.innerText = (currentVolume == 0 || isMusicMuted) ? '🔇' : '🎵';
+            btnSfx.innerText = (currentVolume == 0 || isSfxMuted) ? '🔇' : '🔊';
+            if(!audioCtx) initAudio();
+        });
+
+        // Sự kiện nút Tắt/Mở Nhạc
+        btnMusic.addEventListener('click', () => {
+            isMusicMuted = !isMusicMuted;
+            btnMusic.innerText = isMusicMuted ? '🔇' : (currentVolume == 0 ? '🔇' : '🎵');
+            
+            // Điều chỉnh Tắt/Mở nhạc nền MP3
+            bgmPlayer.muted = isMusicMuted; 
+            
+            if(!audioCtx) initAudio();
+        });
+
+        // Sự kiện nút Tắt/Mở Hiệu Ứng (SFX)
+        btnSfx.addEventListener('click', () => {
+            isSfxMuted = !isSfxMuted;
+            btnSfx.innerText = isSfxMuted ? '🔇' : (currentVolume == 0 ? '🔇' : '🔊');
+            if(masterGain) masterGain.gain.value = isSfxMuted ? 0 : currentVolume;
+            
+            if(!audioCtx) initAudio();
+        });
+
+        function initAudio() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new AudioContext();
+                    masterGain = audioCtx.createGain();
+                    masterGain.connect(audioCtx.destination);
+                    masterGain.gain.value = isSfxMuted ? 0 : currentVolume;
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) { }
+        }
+
+        // Hàm phát hiệu ứng âm thanh (SFX) bằng sóng âm hệ thống (Giữ nguyên)
+        function playSound(type) {
+            if (!audioCtx || isSfxMuted || currentVolume == 0) return;
+            const now = audioCtx.currentTime;
+            try {
+                if (type === 'laser') {
+                    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(1200, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                    gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.connect(gain); gain.connect(masterGain); osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'match') {
+                    [0, 0.08, 0.16].forEach((timeOffset, i) => {
+                        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(400 + (i * 200), now + timeOffset);
+                        gain.gain.setValueAtTime(0.08, now + timeOffset); gain.gain.exponentialRampToValueAtTime(0.001, now + timeOffset + 0.3);
+                        osc.connect(gain); gain.connect(masterGain); osc.start(now + timeOffset); osc.stop(now + timeOffset + 0.3);
+                    });
+                } else {
+                    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                    osc.connect(gain); gain.connect(masterGain);
+                    if (type === 'zap') { osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.2); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); osc.start(now); osc.stop(now + 0.2); }
+                    else if (type === 'swap') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(500, now + 0.1); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); osc.start(now); osc.stop(now + 0.1); } 
+                    else if (type === 'blast') { osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.3); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); osc.start(now); osc.stop(now + 0.3); } 
+                    else if (type === 'break') { osc.type = 'square'; osc.frequency.setValueAtTime(80, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.2); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); osc.start(now); osc.stop(now + 0.2); }
+                }
+            } catch(e) { } 
+        }
+
+        /* ==========================================
+           HỆ THỐNG NÚT BẤM VÀ MENU MÀN CHƠI
+           ========================================== */
+        const btnAction = document.getElementById('btn-action');
+        btnAction.addEventListener('click', () => {
+            if (gameActionState === 'NEXT_LEVEL') startLevel(currentLevel + 1);
+            else startLevel(currentLevel); 
+            gameActionState = 'PLAYING';
+        });
+
+        const levelModal = document.getElementById('level-modal');
+        const levelContainer = document.getElementById('level-container');
+
+        document.getElementById('btn-levels').addEventListener('click', () => {
+            renderLevelMenu();
+            levelModal.style.display = 'flex';
+        });
+        document.getElementById('btn-close-levels').addEventListener('click', () => {
+            levelModal.style.display = 'none';
+        });
+
+        function renderLevelMenu() {
+            levelContainer.innerHTML = '';
+            for(let i = 1; i <= MAX_TOTAL_LEVELS; i++) {
+                let btn = document.createElement('button');
+                if (i <= maxUnlockedLevel) {
+                    btn.className = 'level-btn';
+                    btn.innerText = i;
+                    btn.onclick = () => {
+                        levelModal.style.display = 'none';
+                        startLevel(i);
+                        gameActionState = 'PLAYING';
+                    };
+                } else {
+                    btn.className = 'level-btn locked';
+                    btn.innerHTML = '🔒';
+                }
+                levelContainer.appendChild(btn);
+            }
+        }
+
+        document.getElementById('btn-help').addEventListener('click', () => document.getElementById('help-modal').style.display = 'flex');
+        document.getElementById('btn-close-help').addEventListener('click', () => document.getElementById('help-modal').style.display = 'none');
+
+        /* ==========================================
+           RESIZE CANVAS (Responsive)
+           ========================================== */
+        function resizeCanvas() {
+            let maxW = Math.min(window.innerWidth - 40, 500);
+            cellSize = Math.floor((maxW - padding * 2) / width);
+            const dpr = window.devicePixelRatio || 1;
+            logicalWidth = width * cellSize + padding * 2;
+            
+            canvas.width = logicalWidth * dpr;
+            canvas.height = logicalWidth * dpr;
+            canvas.style.width = `${logicalWidth}px`;
+            canvas.style.height = `${logicalWidth}px`;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            if (board && board.length === 64) {
+                for(let i=0; i<64; i++) {
+                    let col = i % width; let row = Math.floor(i / width);
+                    board[i].targetX = padding + col * cellSize;
+                    board[i].targetY = padding + row * cellSize;
+                }
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function updateUI() {
+            document.getElementById('score').innerText = score;
+            document.getElementById('moves').innerText = moves;
+            let goalText = levelConfig.targetType === 'score' ? `Điểm<br>${levelConfig.targetAmount}` : 
+                           (levelConfig.targetType === 'jelly' ? `Phá Thạch<br>${missionCurrent}/${levelConfig.targetAmount}` : `Phá Bánh<br>${missionCurrent}/${levelConfig.targetAmount}`);
+            document.getElementById('goal').innerHTML = goalText;
+        }
+
+        function startLevel(lvl) {
+            initAudio(); 
+            currentLevel = lvl;
+            
+            // Tinh chỉnh độ khó thông minh, bắt đầu từ dễ đến khó
+            let baseMoves = 15 + Math.floor(lvl / 3); // Lượt đi tăng từ từ
+            levelConfig = { level: lvl, moves: baseMoves, targetType: 'score', targetAmount: 0, jellies: 0, woods: 0 };
+            
+            if (lvl % 3 === 1) { 
+                // Nhiệm vụ điểm số (Màn 1, 4, 7...)
+                levelConfig.targetType = 'score'; 
+                levelConfig.targetAmount = 800 + (lvl - 1) * 600; // Màn 1: 800 điểm, dễ thở hơn nhiều
+            } else if (lvl % 3 === 2) { 
+                // Nhiệm vụ phá thạch (Màn 2, 5, 8...)
+                levelConfig.targetType = 'jelly'; 
+                levelConfig.jellies = Math.min(64, 4 + lvl * 2); // Màn 2: 8 thạch
+                levelConfig.targetAmount = levelConfig.jellies; 
+                levelConfig.woods = Math.floor(lvl / 3); // Bắt đầu xen lẫn một ít gỗ
+            } else { 
+                // Nhiệm vụ phá gỗ (Màn 3, 6, 9...)
+                levelConfig.targetType = 'wood'; 
+                levelConfig.woods = Math.min(30, 3 + lvl * 2); // Màn 3: 9 gỗ
+                levelConfig.targetAmount = levelConfig.woods;
+                levelConfig.jellies = Math.floor(lvl / 4); // Bắt đầu xen lẫn thạch
+            }
+            
+            // Xử lý Giao diện màu sắc theo màn chơi
+            document.getElementById('game-body').className = `theme-${(lvl - 1) % 3}`;
+            
+            // LOGIC PHÁT NHẠC NỀN MP3 THEO MÀN
+            let trackIndex = (lvl - 1) % mp3Tracks.length;
+            let targetSrc = mp3Tracks[trackIndex];
+            
+            // Chỉ đổi source và phát lại từ đầu nếu đó là một bài khác
+            if (!bgmPlayer.src.endsWith(encodeURIComponent(targetSrc))) {
+                bgmPlayer.src = targetSrc;
+            }
+            
+            bgmPlayer.volume = isMusicMuted ? 0 : currentVolume;
+            bgmPlayer.muted = isMusicMuted;
+            
+            // Yêu cầu phát nhạc (Browser có thể chặn nếu user chưa click)
+            let playPromise = bgmPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => console.log("Chờ người chơi tương tác để phát nhạc..."));
+            }
+            
+            score = 0; moves = levelConfig.moves; missionCurrent = 0; isProcessing = false;
+            document.getElementById('level').innerText = lvl; updateUI();
+            document.getElementById('overlay').style.display = 'none';
+
+            board = [];
+            particles = [];
+            lasers = [];
+            explosions = [];
+
+            for(let i=0; i<64; i++) {
+                let col = i % width; let row = Math.floor(i / width);
+                let x = padding + col * cellSize; let y = padding + row * cellSize;
+                board.push({
+                    color: 'none', special: 'none', jelly: false, wood: false,
+                    targetX: x, targetY: y, visualX: x, visualY: -cellSize*2, scale: 1, isHint: false
+                });
+            }
+
+            let j = 0; while(j < levelConfig.jellies) { let r=Math.floor(Math.random()*64); if(!board[r].jelly) {board[r].jelly=true; j++;} }
+            let w = 0; while(w < levelConfig.woods) { let r=Math.floor(Math.random()*64); if(r>15 && !board[r].wood) {board[r].color='wood'; board[r].wood=true; w++;} }
+
+            for(let i=0; i<64; i++) {
+                if(board[i].color === 'none') {
+                    board[i].color = getValidRandomColor(i);
+                    board[i].visualY = board[i].targetY - 500 - Math.random()*200; 
+                }
+            }
+            resetHintTimer();
+        }
+
+        /* ==========================================
+           LOGIC VẼ CANVAS ĐỒ HỌA
+           ========================================== */
+        function drawCandyShape(ctx, color, special, x, y, size, scale, isHint) {
+            if(scale <= 0) return;
+            ctx.save();
+            ctx.translate(x + size/2, y + size/2);
+            ctx.scale(scale, scale);
+            let s = size * 0.8; let r = s / 2;
+
+            ctx.shadowColor = isHint ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = isHint ? 15 : 4;
+            ctx.shadowOffsetY = isHint ? 0 : 3;
+
+            let cHex = hexColors[color];
+            
+            if (color === 'wood') {
+                ctx.fillStyle = cHex[0]; ctx.strokeStyle = cHex[1]; ctx.lineWidth = 3;
+                ctx.fillRect(-r, -r, s, s); ctx.strokeRect(-r, -r, s, s);
+            } else if (color === 'bomb') {
+                ctx.fillStyle = cHex[0]; ctx.beginPath(); ctx.arc(0,0, r, 0, Math.PI*2); ctx.fill();
+                ctx.lineWidth = 2; ctx.strokeStyle = cHex[1]; ctx.stroke();
+                const pC = ['#ff7979','#f6e58d','#badc58','#7ed6df','#e056fd'];
+                for(let i=0; i<6; i++) {
+                    ctx.fillStyle = pC[i%5]; ctx.beginPath();
+                    ctx.arc(Math.cos(i)*r*0.6, Math.sin(i)*r*0.6, r*0.15, 0, Math.PI*2); ctx.fill();
+                }
+            } else {
+                let grad = ctx.createRadialGradient(-r/3, -r/3, 0, 0, 0, r);
+                grad.addColorStop(0, cHex[0]); grad.addColorStop(1, cHex[1]);
+                ctx.fillStyle = grad;
+
+                ctx.beginPath();
+                if(color === 'red' || color === 'purple') {
+                    ctx.arc(0,0, r, 0, Math.PI*2); ctx.fill();
+                    if(color === 'purple') {
+                        ctx.fillStyle='rgba(255,255,255,0.4)';
+                        ctx.beginPath(); ctx.arc(-r/3, -r/3, r/4, 0, Math.PI*2); ctx.fill();
+                    }
+                } else if (color === 'yellow') {
+                    for(let i=0; i<5; i++) {
+                        ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*r, -Math.sin((18+i*72)*Math.PI/180)*r);
+                        ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*r*0.4, -Math.sin((54+i*72)*Math.PI/180)*r*0.4);
+                    }
+                    ctx.closePath(); ctx.fill();
+                } else if (color === 'blue' || color === 'orange') {
+                    let rectR = color==='blue'?8:r;
+                    if (ctx.roundRect) { ctx.roundRect(-r, -r, s, s, rectR); } 
+                    else { ctx.rect(-r, -r, s, s); }
+                    ctx.fill();
+                } else if (color === 'green') {
+                    ctx.arc(0,0, r, 0, Math.PI*2);
+                    ctx.arc(0,0, r/2, 0, Math.PI*2, true); 
+                    ctx.fill();
+                }
+            }
+
+            ctx.shadowColor = 'transparent'; 
+            if (special === 'striped-h') {
+                ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(-r, -r*0.2, s, r*0.4);
+            } else if (special === 'striped-v') {
+                ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(-r*0.2, -r, r*0.4, s);
+            } else if (special === 'wrapped') {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath(); ctx.arc(0, 0, r*1.1, 0, Math.PI*2); ctx.fill(); 
+                ctx.beginPath(); ctx.moveTo(-r*0.6, -r*0.9); ctx.lineTo(r*0.6, -r*0.9); ctx.lineTo(0, -r*1.6); ctx.fill(); 
+                ctx.beginPath(); ctx.moveTo(-r*0.6, r*0.9); ctx.lineTo(r*0.6, r*0.9); ctx.lineTo(0, r*1.6); ctx.fill(); 
+                ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2; ctx.stroke();
+            } else if (special === 'fish') {
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.beginPath(); ctx.moveTo(r, r); ctx.lineTo(r*0.3, r); ctx.lineTo(r, r*0.3); ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+            ctx.fillRect(0, 0, logicalWidth, logicalWidth);
+
+            for(let i=0; i<64; i++) {
+                let col = i % width; let row = Math.floor(i / width);
+                let x = padding + col * cellSize; let y = padding + row * cellSize;
+                ctx.fillStyle = 'rgba(230, 230, 230, 0.8)';
+                ctx.beginPath(); 
+                if (ctx.roundRect) ctx.roundRect(x+2, y+2, cellSize-4, cellSize-4, 8);
+                else ctx.rect(x+2, y+2, cellSize-4, cellSize-4);
+                ctx.fill();
+                
+                if(board[i] && board[i].jelly) {
+                    ctx.fillStyle = 'rgba(156, 136, 255, 0.3)';
+                    ctx.strokeStyle = '#8c7ae6'; ctx.lineWidth = 2;
+                    ctx.beginPath(); 
+                    if(ctx.roundRect) ctx.roundRect(x+2, y+2, cellSize-4, cellSize-4, 12);
+                    else ctx.rect(x+2, y+2, cellSize-4, cellSize-4);
+                    ctx.fill(); ctx.stroke();
+                }
+            }
+
+            if(board.length === 64) {
+                board.forEach(b => {
+                    if(b.color !== 'none') {
+                        b.visualX += (b.targetX - b.visualX) * 0.2;
+                        b.visualY += (b.targetY - b.visualY) * 0.2;
+                        if(b.scale < 1) b.scale += 0.05;
+                        
+                        let isHint = b.isHint && (Date.now() % 800 < 400); 
+                        drawCandyShape(ctx, b.color, b.special, b.visualX, b.visualY, cellSize, b.scale, isHint);
+                    }
+                });
+            }
+
+            for(let i=explosions.length-1; i>=0; i--) {
+                let e = explosions[i];
+                e.life -= 0.05;
+                if(e.life <= 0) { explosions.splice(i, 1); continue; }
+                
+                ctx.globalAlpha = e.life;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.shadowColor = '#fff';
+                ctx.shadowBlur = 20;
+                
+                if (e.type === 'beam-h') {
+                    ctx.fillRect(0, e.y - 10 * (e.scale||1), logicalWidth, 20 * (e.scale||1));
+                } else if (e.type === 'beam-v') {
+                    ctx.fillRect(e.x - 10 * (e.scale||1), 0, 20 * (e.scale||1), logicalWidth);
+                } else if (e.type === 'blast') {
+                    e.radius += 8;
+                    ctx.beginPath(); ctx.arc(e.x, e.y, e.radius, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
+            }
+
+            for(let i=particles.length-1; i>=0; i--) {
+                let p = particles[i];
+                p.x += p.vx; p.y += p.vy; p.vy += 0.5;
+                p.life -= 0.02;
+                if(p.life <= 0) { particles.splice(i, 1); continue; }
+                
+                ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            for(let i=lasers.length-1; i>=0; i--) {
+                let l = lasers[i];
+                l.life -= 0.05;
+                if(l.life <= 0) { lasers.splice(i, 1); continue; }
+                
+                ctx.strokeStyle = l.color; ctx.lineWidth = (l.width || 8) * l.life; ctx.lineCap = 'round';
+                ctx.shadowColor = l.color; ctx.shadowBlur = 10;
+                ctx.globalAlpha = l.life;
+                ctx.beginPath(); ctx.moveTo(l.startX, l.startY); ctx.lineTo(l.endX, l.endY); ctx.stroke();
+                ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+
+        /* ==========================================
+           SỰ KIỆN CHẠM/VUỐT TRÊN CANVAS
+           ========================================== */
+        function getGridIdx(e) {
+            let rect = canvas.getBoundingClientRect();
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let x = clientX - rect.left - padding;
+            let y = clientY - rect.top - padding;
+            
+            let actualCellSize = (rect.width - padding*2) / width;
+            if(x < 0 || x >= width*actualCellSize || y < 0 || y >= width*actualCellSize) return -1;
+            return Math.floor(y / actualCellSize) * width + Math.floor(x / actualCellSize);
+        }
+
+        canvas.addEventListener('mousedown', e => { handleStart(getGridIdx(e), e.clientX, e.clientY); });
+        canvas.addEventListener('touchstart', e => { handleStart(getGridIdx(e), e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+        
+        function handleStart(idx, cx, cy) {
+            if(isProcessing || moves <= 0 || idx === -1 || board[idx].wood) return;
+            touchStartIdx = idx; touchStartX = cx; touchStartY = cy; resetHintTimer();
+        }
+
+        canvas.addEventListener('mouseup', e => { handleEnd(e.clientX, e.clientY); });
+        canvas.addEventListener('touchend', e => { handleEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY); });
+
+        function handleEnd(cx, cy) {
+            if(isProcessing || moves <= 0 || touchStartIdx === -1) return;
+            let dx = cx - touchStartX; let dy = cy - touchStartY;
+            let targetIdx = -1;
+
+            if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
+                if (Math.abs(dx) > Math.abs(dy)) targetIdx = dx > 0 ? touchStartIdx + 1 : touchStartIdx - 1;
+                else targetIdx = dy > 0 ? touchStartIdx + width : touchStartIdx - width;
+
+                let validMoves = [touchStartIdx - 1, touchStartIdx - width, touchStartIdx + 1, touchStartIdx + width];
+                if (touchStartIdx % width === 0 && targetIdx === touchStartIdx - 1) validMoves = [];
+                if (touchStartIdx % width === width - 1 && targetIdx === touchStartIdx + 1) validMoves = [];
+
+                if (validMoves.includes(targetIdx) && !board[targetIdx].wood) {
+                    executeSwap(touchStartIdx, targetIdx);
+                }
+            }
+            touchStartIdx = -1;
+        }
+
+        function getValidRandomColor(index) {
+            let valids = [...candyColors];
+            if (index % width >= 2 && board[index-1] && board[index-2] && board[index-1].color === board[index-2].color) valids = valids.filter(c => c !== board[index-1].color);
+            if (index >= width * 2 && board[index-width] && board[index-width*2] && board[index-width].color === board[index-width*2].color) valids = valids.filter(c => c !== board[index-width].color);
+            return valids[Math.floor(Math.random() * valids.length)];
+        }
+
+        function getRandomTarget(exclude = []) {
+            let validGoal = [];
+            let validSecondary = [];
+            let validAny = [];
+
+            for(let i=0; i<64; i++) {
+                if(exclude.includes(i) || board[i].color === 'none') continue;
+                
+                // Ưu tiên 1: Theo đúng nhiệm vụ của màn chơi
+                if (levelConfig.targetType === 'jelly' && board[i].jelly) validGoal.push(i);
+                if (levelConfig.targetType === 'wood' && board[i].wood) validGoal.push(i);
+                
+                // Ưu tiên 2: Thạch hoặc Gỗ bất kỳ (nếu không phải nhiệm vụ chính nhưng vẫn còn trên bàn)
+                if (board[i].jelly || board[i].wood) validSecondary.push(i);
+
+                // Ưu tiên 3: Kẹo bình thường
+                validAny.push(i);
+            }
+
+            if (validGoal.length > 0) return validGoal[Math.floor(Math.random() * validGoal.length)];
+            if (validSecondary.length > 0) return validSecondary[Math.floor(Math.random() * validSecondary.length)];
+            return validAny.length > 0 ? validAny[Math.floor(Math.random() * validAny.length)] : -1;
+        }
+
+        function executeSwap(id1, id2) {
+            resetHintTimer();
+            if (checkSpecialCombo(id1, id2)) return;
+
+            let tempC = board[id1].color, tempS = board[id1].special;
+            board[id1].color = board[id2].color; board[id1].special = board[id2].special;
+            board[id2].color = tempC; board[id2].special = tempS;
+
+            let vx = board[id1].visualX, vy = board[id1].visualY;
+            board[id1].visualX = board[id2].visualX; board[id1].visualY = board[id2].visualY;
+            board[id2].visualX = vx; board[id2].visualY = vy;
+
+            playSound('swap');
+            let matches = findMatches();
+            if (matches.all.size > 0) {
+                moves--; updateUI(); isProcessing = true;
+                setTimeout(() => processMatches(matches, id1, id2), 200);
+            } else {
+                isProcessing = true;
+                setTimeout(() => { 
+                    let rC = board[id1].color, rS = board[id1].special;
+                    board[id1].color = board[id2].color; board[id1].special = board[id2].special;
+                    board[id2].color = rC; board[id2].special = rS;
+                    let rvx = board[id1].visualX, rvy = board[id1].visualY;
+                    board[id1].visualX = board[id2].visualX; board[id1].visualY = board[id2].visualY;
+                    board[id2].visualX = rvx; board[id2].visualY = rvy;
+                    playSound('swap'); isProcessing = false; resetHintTimer();
+                }, 300);
+            }
+        }
+
+        function checkSpecialCombo(id1, id2) {
+            let s1 = board[id1].special, s2 = board[id2].special;
+            if (s1 === 'none' && s2 === 'none') return false;
+
+            let center = id2;
+            let toDestroy = new Set();
+            
+            if (s1 === 'color-bomb' && s2 === 'color-bomb') {
+                moves--; updateUI(); isProcessing = true; playSound('laser');
+                board[id1].color = 'none'; board[id1].special = 'none'; board[id2].color = 'none'; board[id2].special = 'none';
+                for(let i=0; i<64; i++) {
+                    if(board[i].color !== 'none') {
+                        toDestroy.add(i);
+                        // Nâng cấp: Bắn tia laser tỏa ra mọi hướng
+                        spawnLaser(center, i, 'none', 3); 
+                    }
+                }
+                setTimeout(() => applyDestruction(toDestroy), 400); return true;
+            }
+
+            if (s1 === 'color-bomb' || s2 === 'color-bomb') {
+                moves--; updateUI(); isProcessing = true; playSound('laser');
+                let bombId = s1 === 'color-bomb' ? id1 : id2, targetId = bombId === id1 ? id2 : id1;
+                let tColor = board[targetId].color, tSpec = board[targetId].special;
+                board[bombId].color = 'none'; board[bombId].special = 'none';
+                
+                board.forEach((b, i) => { 
+                    if(b.color === tColor) { 
+                        if(tSpec !== 'none') b.special = tSpec.includes('striped') ? (Math.random()>0.5?'striped-h':'striped-v') : tSpec;
+                        toDestroy.add(i); spawnLaser(bombId, i, tColor, 12); 
+                    } 
+                });
+                setTimeout(() => applyDestruction(toDestroy), tSpec === 'none' ? 400 : 600); 
+                return true;
+            }
+
+            if (s1.includes('striped') && s2.includes('striped')) {
+                moves--; updateUI(); isProcessing = true; playSound('blast');
+                board[id1].color = 'none'; board[id1].special = 'none'; board[id2].color = 'none'; board[id2].special = 'none';
+                explosions.push({type: 'beam-h', y: board[center].targetY + cellSize/2, life: 1, scale: 1});
+                explosions.push({type: 'beam-v', x: board[center].targetX + cellSize/2, life: 1, scale: 1});
+                let r=Math.floor(center/width), c=center%width;
+                for(let i=0; i<width; i++) { toDestroy.add(r*width+i); toDestroy.add(i*width+c); }
+                setTimeout(() => applyDestruction(toDestroy), 200); return true;
+            }
+
+            if (s1 === 'wrapped' && s2 === 'wrapped') {
+                moves--; updateUI(); isProcessing = true; playSound('blast');
+                board[id1].color = 'none'; board[id1].special = 'none'; board[id2].color = 'none'; board[id2].special = 'none';
+                explosions.push({type: 'blast', x: board[center].targetX + cellSize/2, y: board[center].targetY + cellSize/2, life: 1.5, radius: cellSize});
+                let r=Math.floor(center/width), c=center%width;
+                for(let i=-2; i<=2; i++) { for(let j=-2; j<=2; j++) { let nr=r+i, nc=c+j; if(nr>=0 && nr<width && nc>=0 && nc<width) toDestroy.add(nr*width+nc); } }
+                setTimeout(() => applyDestruction(toDestroy), 200); return true;
+            }
+
+            if ((s1.includes('striped') && s2 === 'wrapped') || (s1 === 'wrapped' && s2.includes('striped'))) {
+                moves--; updateUI(); isProcessing = true; playSound('blast');
+                board[id1].color = 'none'; board[id1].special = 'none'; board[id2].color = 'none'; board[id2].special = 'none';
+                explosions.push({type: 'beam-h', y: board[center].targetY + cellSize/2, life: 1.5, scale: 3});
+                explosions.push({type: 'beam-v', x: board[center].targetX + cellSize/2, life: 1.5, scale: 3});
+                let r=Math.floor(center/width), c=center%width;
+                for(let i=0; i<width; i++) {
+                    for(let d=-1; d<=1; d++) {
+                        if (r+d>=0 && r+d<width) toDestroy.add((r+d)*width+i);
+                        if (c+d>=0 && c+d<width) toDestroy.add(i*width+(c+d));
+                    }
+                }
+                setTimeout(() => applyDestruction(toDestroy), 200); return true;
+            }
+
+            if (s1 === 'fish' && s2 === 'fish') {
+                moves--; updateUI(); isProcessing = true; playSound('blast');
+                board[id1].color = 'none'; board[id1].special = 'none'; board[id2].color = 'none'; board[id2].special = 'none';
+                
+                // Nâng cấp: Cá + Cá = 4 con cá thông minh
+                let targets = [];
+                let tempExclude = [id1, id2];
+                for(let i=0; i<4; i++) {
+                    let t = getRandomTarget(tempExclude);
+                    if(t !== -1) { targets.push(t); tempExclude.push(t); }
+                }
+                
+                targets.forEach(t => { spawnLaser(center, t, 'none', 8); toDestroy.add(t); });
+                setTimeout(() => applyDestruction(toDestroy), 300); return true;
+            }
+
+            if (s1 === 'fish' || s2 === 'fish') {
+                let otherSpec = s1 === 'fish' ? s2 : s1;
+                if (otherSpec !== 'none') {
+                    moves--; updateUI(); isProcessing = true; playSound('blast');
+                    board[id1].color = 'none'; board[id1].special = 'none'; board[id2].color = 'none'; board[id2].special = 'none';
+                    let t = getRandomTarget([id1, id2]);
+                    if (t !== -1) {
+                        spawnLaser(center, t, 'none', 8);
+                        setTimeout(() => {
+                            board[t].special = otherSpec.includes('striped') ? (Math.random()>0.5?'striped-h':'striped-v') : 'wrapped';
+                            toDestroy.add(t); applyDestruction(toDestroy);
+                        }, 300);
+                    } else { setTimeout(() => applyDestruction(toDestroy), 300); }
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function spawnLaser(id1, id2, color, widthLine = 6) {
+            lasers.push({
+                startX: board[id1].targetX + cellSize/2, startY: board[id1].targetY + cellSize/2,
+                endX: board[id2].targetX + cellSize/2, endY: board[id2].targetY + cellSize/2,
+                color: hexColors[color] ? hexColors[color][0] : '#fff', life: 1, width: widthLine
+            });
+        }
+
+        function triggerParticles(idx) {
+            let c = hexColors[board[idx].color] ? hexColors[board[idx].color][0] : '#fff';
+            let px = board[idx].targetX + cellSize/2, py = board[idx].targetY + cellSize/2;
+            for(let i=0; i<6; i++) {
+                particles.push({x: px, y: py, vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8 - 2, color: c, size: Math.random()*4+2, life: 1});
+            }
+        }
+
+        function findMatches() {
+            let matches = [], hM = new Set(), vM = new Set(), sqM = new Set();
+            for (let r = 0; r < width; r++) { for (let c = 0; c < width - 2; c++) { let i = r*width+c, color = board[i].color; if (color === 'none' || color === 'wood' || color === 'bomb') continue; let len = 1; while (c+len < width && board[i+len].color === color) len++; if (len >= 3) { let match = []; for (let j=0; j<len; j++) { match.push(i+j); hM.add(i+j); } matches.push({ type: 'h', indices: match, color }); c += len - 1; } } }
+            for (let c = 0; c < width; c++) { for (let r = 0; r < width - 2; r++) { let i = r*width+c, color = board[i].color; if (color === 'none' || color === 'wood' || color === 'bomb') continue; let len = 1; while (r+len < width && board[i+len*width].color === color) len++; if (len >= 3) { let match = []; for (let j=0; j<len; j++) { match.push(i+j*width); vM.add(i+j*width); } matches.push({ type: 'v', indices: match, color }); r += len - 1; } } }
+            
+            for (let r = 0; r < width - 1; r++) { 
+                for (let c = 0; c < width - 1; c++) { 
+                    let i = r*width+c, color = board[i].color; 
+                    if (color === 'none' || color === 'wood' || color === 'bomb') continue; 
+                    if (board[i+1].color===color && board[i+width].color===color && board[i+width+1].color===color) { 
+                        let match = [i, i+1, i+width, i+width+1]; 
+                        matches.push({ type: 'square', indices: match, color }); 
+                        match.forEach(idx => sqM.add(idx)); 
+                    } 
+                } 
+            }
+            return { raw: matches, all: new Set([...hM, ...vM, ...sqM]), hM, vM };
+        }
+
+        function processMatches(matchesData, p1, p2) {
+            playSound('match');
+            let toDestroy = new Set(matchesData.all);
+            let spawnDict = {};
+            
+            let intersections = [...matchesData.hM].filter(x => matchesData.vM.has(x));
+            intersections.forEach(idx => { spawnDict[idx] = { special: 'wrapped', color: board[idx].color }; });
+
+            matchesData.raw.forEach(m => {
+                let pos = m.indices.includes(p1) ? p1 : (m.indices.includes(p2) ? p2 : m.indices[Math.floor(m.indices.length/2)]);
+                if (m.indices.length >= 5 && m.type !== 'square' && !spawnDict[pos]) spawnDict[pos] = { special: 'color-bomb', color: 'bomb' };
+                else if (m.type === 'square' && !spawnDict[pos]) spawnDict[pos] = { special: 'fish', color: m.color };
+                else if (m.indices.length === 4 && !spawnDict[pos]) spawnDict[pos] = { special: m.type==='h'?'striped-v':'striped-h', color: m.color };
+            });
+
+            applyDestruction(toDestroy, spawnDict);
+        }
+
+        function applyDestruction(toDestroySet, spawnDict = {}) {
+            let recursiveDestroy = new Set(); 
+            
+            const trigger = (idx) => {
+                if (recursiveDestroy.has(idx)) return; 
+                if (board[idx].color === 'none' && !board[idx].wood) return; 
+
+                recursiveDestroy.add(idx); 
+                triggerParticles(idx);
+                
+                let spec = board[idx].special;
+
+                if (spec === 'striped-h') { 
+                    playSound('blast'); 
+                    explosions.push({type: 'beam-h', y: board[idx].targetY + cellSize/2, life: 1});
+                    let r=Math.floor(idx/width); 
+                    for(let c=0;c<width;c++) trigger(r*width+c); 
+                }
+                else if (spec === 'striped-v') { 
+                    playSound('blast'); 
+                    explosions.push({type: 'beam-v', x: board[idx].targetX + cellSize/2, life: 1});
+                    let c=idx%width; 
+                    for(let r=0;r<width;r++) trigger(r*width+c); 
+                }
+                else if (spec === 'wrapped') { 
+                    playSound('blast'); 
+                    explosions.push({type: 'blast', x: board[idx].targetX + cellSize/2, y: board[idx].targetY + cellSize/2, life: 1, radius: cellSize/2});
+                    let r=Math.floor(idx/width), c=idx%width; 
+                    for(let i=-1;i<=1;i++){
+                        for(let j=-1;j<=1;j++){
+                            let nr=r+i, nc=c+j; 
+                            if(nr>=0 && nr<width && nc>=0 && nc<width) trigger(nr*width+nc);
+                        }
+                    } 
+                }
+                else if (spec === 'fish') {
+                    playSound('laser');
+                    let target = getRandomTarget(Array.from(recursiveDestroy)); 
+                    if (target !== -1) {
+                        spawnLaser(idx, target, board[idx].color, 8);
+                        setTimeout(() => {
+                            let newSet = new Set([target]);
+                            applyDestruction(newSet);
+                        }, 300);
+                    }
+                }
+            };
+
+            toDestroySet.forEach(idx => trigger(idx));
+
+            let madeProgress = false;
+            recursiveDestroy.forEach(idx => {
+                if(board[idx].jelly) { board[idx].jelly = false; if(levelConfig.targetType==='jelly'){missionCurrent++; madeProgress=true;} }
+                if(board[idx].color !== 'wood') {
+                    let r=Math.floor(idx/width), c=idx%width;
+                    [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([nr,nc])=>{if(nr>=0&&nr<width&&nc>=0&&nc<width){let n=nr*width+nc; if(board[n].wood) {recursiveDestroy.add(n); playSound('break'); if(levelConfig.targetType==='wood'){missionCurrent++; madeProgress=true;}} }});
+                } else { playSound('break'); if(levelConfig.targetType==='wood'){missionCurrent++; madeProgress=true;} }
+            });
+
+            score += recursiveDestroy.size * 30; 
+            if(madeProgress || recursiveDestroy.size>0) updateUI();
+
+            recursiveDestroy.forEach(idx => {
+                board[idx].scale = 0; 
+                if (spawnDict[idx]) { board[idx].color = spawnDict[idx].color; board[idx].special = spawnDict[idx].special; }
+                else { board[idx].color = 'none'; board[idx].special = 'none'; }
+            });
+
+            setTimeout(dropCandies, 300);
+        }
+
+        function dropCandies() {
+            for (let col = 0; col < width; col++) {
+                for (let row = width - 1; row >= 0; row--) {
+                    let i = row * width + col;
+                    if (board[i].color === 'none') {
+                        let found = false;
+                        for (let above = row - 1; above >= 0; above--) {
+                            let aIdx = above * width + col;
+                            if (board[aIdx].wood) break; 
+                            if (board[aIdx].color !== 'none') { 
+                                board[i].color = board[aIdx].color; board[i].special = board[aIdx].special; board[i].scale = 1;
+                                board[i].visualY = board[aIdx].visualY; 
+                                board[aIdx].color = 'none'; board[aIdx].special = 'none'; 
+                                found = true; break; 
+                            }
+                        }
+                        if (!found) {
+                            board[i].color = candyColors[Math.floor(Math.random() * candyColors.length)]; 
+                            board[i].scale = 1;
+                            
+                            let startY = -cellSize * 2;
+                            for (let above = row - 1; above >= 0; above--) {
+                                if (board[above*width+col].wood) {
+                                    startY = board[above*width+col].targetY + cellSize/2; 
+                                    break;
+                                }
+                            }
+                            board[i].visualY = startY;
+                        }
+                    }
+                }
+            }
+            
+            setTimeout(() => {
+                let matches = findMatches();
+                if(matches.all.size > 0) processMatches(matches, -1, -1);
+                else { isProcessing = false; checkWinLose(); resetHintTimer(); }
+            }, 350); 
+        }
+
+        function resetHintTimer() {
+            clearTimeout(hintTimer); 
+            if(board && board.length) board.forEach(b => b.isHint = false);
+            if(isProcessing || moves <= 0) return;
+            hintTimer = setTimeout(showHint, 4000); 
+        }
+
+        function showHint() {
+            if(isProcessing) return;
+            let move = null;
+            for(let i=0; i<64 && !move; i++) {
+                if(board[i].color==='none'||board[i].wood) continue;
+                if(board[i].special === 'color-bomb') {
+                    if(i%8<7 && board[i+1].color!=='none'&&!board[i+1].wood) move=[i, i+1];
+                    else if(i<56 && board[i+8].color!=='none'&&!board[i+8].wood) move=[i, i+8];
+                }
+                if(i%8<7 && !board[i+1].wood) {
+                    let tc=board[i].color, ts=board[i].special; board[i].color=board[i+1].color; board[i].special=board[i+1].special; board[i+1].color=tc; board[i+1].special=ts;
+                    if(findMatches().all.size>0) move=[i, i+1];
+                    tc=board[i].color; ts=board[i].special; board[i].color=board[i+1].color; board[i].special=board[i+1].special; board[i+1].color=tc; board[i+1].special=ts;
+                }
+                if(!move && i<56 && !board[i+8].wood) {
+                    let tc=board[i].color, ts=board[i].special; board[i].color=board[i+8].color; board[i].special=board[i+8].special; board[i+8].color=tc; board[i+8].special=ts;
+                    if(findMatches().all.size>0) move=[i, i+8];
+                    tc=board[i].color; ts=board[i].special; board[i].color=board[i+8].color; board[i].special=board[i+8].special; board[i+8].color=tc; board[i+8].special=ts; 
+                }
+            }
+            if(move) { board[move[0]].isHint = true; board[move[1]].isHint = true; }
+        }
+
+        function checkWinLose() {
+            let win = false;
+            if(levelConfig.targetType==='score' && score >= levelConfig.targetAmount) win=true;
+            if(levelConfig.targetType==='jelly' && missionCurrent >= levelConfig.targetAmount) win=true;
+            if(levelConfig.targetType==='wood' && missionCurrent >= levelConfig.targetAmount) win=true;
+
+            let overlay = document.getElementById('overlay'), title = document.getElementById('msg-title');
+            
+            if (win) {
+                if (currentLevel >= maxUnlockedLevel && currentLevel < MAX_TOTAL_LEVELS) {
+                    maxUnlockedLevel = currentLevel + 1;
+                    localStorage.setItem('keoKeBaGai_MaxLevel', maxUnlockedLevel.toString());
+                }
+
+                for(let i=0; i<40; i++) {
+                    let conf = document.createElement('div'); conf.className = 'confetti';
+                    conf.style.left = Math.random()*100+'vw'; conf.style.top = -20+'px';
+                    conf.style.backgroundColor = ['#eb4d4b','#f9ca24','#0984e3','#10ac84','#be2edd','#e15f41'][Math.floor(Math.random()*6)];
+                    conf.style.animationDuration = (Math.random()*2+1.5)+'s'; document.body.appendChild(conf);
+                    setTimeout(()=>conf.remove(), 4000);
+                }
+                overlay.style.display = 'flex'; title.innerText = "QUA MÀN!"; title.className = "win-text"; isProcessing = true;
+                btnAction.innerText = "Màn Tiếp Theo"; 
+                gameActionState = 'NEXT_LEVEL';
+            } else if (moves <= 0) {
+                overlay.style.display = 'flex'; title.innerText = "HẾT LƯỢT!"; title.className = "lose-text"; isProcessing = true;
+                btnAction.innerText = "Chơi Lại"; 
+                gameActionState = 'RESTART';
+            }
+        }
+    </script>
+</body>
+</html>
