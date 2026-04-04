@@ -878,8 +878,9 @@
             ctx.scale(scale, scale);
 
             if (isHint) {
-                ctx.shadowColor = 'rgba(255,255,255,0.8)';
-                ctx.shadowBlur = 15;
+                // CHÚ THÍCH: Làm hiệu ứng viền chớp sáng rực rỡ và rõ hơn (Vàng sáng)
+                ctx.shadowColor = '#ffff00';
+                ctx.shadowBlur = 25;
                 ctx.shadowOffsetY = 0;
             }
 
@@ -913,8 +914,30 @@
                         b.visualY += (b.targetY - b.visualY) * 0.2;
                         if(b.scale < 1) b.scale += 0.05;
                         
-                        let isHint = b.isHint && (Date.now() % 800 < 400); 
-                        drawCandyShape(ctx, b, b.visualX, b.visualY, cellSize, b.scale, isHint);
+                        // CHÚ THÍCH: Thêm vòng hào quang nhấp nháy cho kẹo được gợi ý
+                        if (b.isHint) {
+                            ctx.save();
+                            ctx.translate(b.visualX + cellSize/2, b.visualY + cellSize/2);
+                            let pulse = Math.abs(Math.sin(Date.now() / 200));
+                            ctx.beginPath();
+                            ctx.arc(0, 0, cellSize * 0.45 * (1 + 0.3 * pulse), 0, Math.PI * 2);
+                            ctx.fillStyle = `rgba(255, 255, 255, ${0.5 * (1 - pulse)})`;
+                            ctx.fill();
+                            ctx.lineWidth = 4;
+                            ctx.strokeStyle = `rgba(255, 215, 0, ${0.9 * (1 - pulse)})`;
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                        
+                        let isHintPhase = b.isHint && (Date.now() % 600 < 300); // Chớp nhanh hơn
+                        let renderScale = b.scale;
+                        
+                        if (b.isHint) {
+                            // Tạo hiệu ứng kẹo nảy như nhịp tim
+                            renderScale *= (1 + 0.08 * Math.sin(Date.now() / 150)); 
+                        }
+                        
+                        drawCandyShape(ctx, b, b.visualX, b.visualY, cellSize, renderScale, isHintPhase);
                     }
                 });
             }
@@ -1532,7 +1555,8 @@
             clearTimeout(hintTimer); 
             if(board && board.length) board.forEach(b => b.isHint = false);
             if(isProcessing || moves <= 0) return;
-            hintTimer = setTimeout(showHint, 4000); 
+            // CHÚ THÍCH: Giảm thời gian chờ xuống 3 giây để gợi ý xuất hiện nhanh hơn
+            hintTimer = setTimeout(showHint, 3000); 
         }
 
         function showHint() {
