@@ -154,7 +154,7 @@
                 <li><strong>Ghi điểm:</strong> Ghép 3 kẹo cùng màu.</li>
                 <li><strong>Kẹo Đặc Biệt:</strong> 4 viên (Sọc), hình L/T (Gói), Vuông 2x2 (Cá), 5 viên (Color Bomb).</li>
                 <li>🌟 <strong>Kẹo Cao Su:</strong> Đập 2 lần để phá vỡ. Khi vỡ sẽ tự động phát nổ lan!</li>
-                <li>🌟 <strong>Hình dáng sàn chơi:</strong> Giờ đây sàn sẽ có hình Trái tim hoặc Kim cương tùy vào màn.</li>
+                <li>🌟 <strong>Hình dáng sàn chơi:</strong> Sàn sẽ có hình Trái tim, Kim cương hoặc Hình vuông.</li>
                 <li>💡 <strong>Kỹ năng hỗ trợ:</strong> Hãy dùng "Chocolate Party" hoặc "Rainbow Combo" khi bị kẹt. (Chỉ được chọn 1 skill mỗi ván).</li>
             </ul>
             <button class="close-btn" id="btn-close-help">Đã Hiểu!</button>
@@ -191,10 +191,9 @@
         </div>
     </div>
 
-    <!-- UI KỸ NĂNG HỖ TRỢ ĐÃ ĐỔI TÊN -->
     <div class="skills-container">
         <button class="btn-skill" id="skill-bomb" title="Biến 3 kẹo thường thành Color Bomb">💣 Chocolate Party</button>
-        <button class="btn-skill skill-blue" id="skill-combo" title="Tăng tỷ lệ xuất hiện kẹo combo">✨ Rainbow Combo</button>
+        <button class="btn-skill skill-blue" id="skill-combo" title="Kích hoạt 5 kẹo đặc biệt ngẫu nhiên">✨ Rainbow Combo</button>
     </div>
 
     <div class="canvas-container">
@@ -206,12 +205,9 @@
     </div>
 
     <script>
-        /* ==========================================
-           CHÚ THÍCH: HỆ THỐNG LƯỚI ĐỘNG (8x8 CHO VUÔNG, 10x10 CHO HÌNH ĐẶC BIỆT)
-           ========================================== */
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d', { alpha: false }); 
-        let width = 8; // Chuyển thành 'let' để lưới có thể tự động co giãn
+        let width = 8; 
         let totalCells = width * width; 
         let cellSize = 60; 
         let padding = 4;
@@ -244,10 +240,8 @@
             'bubblegum': ['#fd79a8', '#e84393'] 
         };
 
-        // CHÚ THÍCH: Các Mảng định hình sàn (Mask). Sàn Vuông sẽ sử dụng lưới 8x8 (64 ô full viền)
         const SHAPE_SQUARE = new Array(64).fill(1);
         
-        // Hình Trái Tim (sử dụng lưới mở rộng 10x10)
         const SHAPE_HEART = [
             0,0,1,1,1,0,1,1,1,0,
             0,1,1,1,1,1,1,1,1,0,
@@ -259,7 +253,7 @@
             0,0,0,1,1,1,1,0,0,0,
             0,0,0,0,1,1,0,0,0,0,
             0,0,0,0,0,0,0,0,0,0
-        ]; // Chính xác 64 ô
+        ];
         
         const SHAPE_DIAMOND = [
             0,0,0,1,1,1,1,0,0,0,
@@ -272,11 +266,147 @@
             0,0,1,1,1,1,1,1,0,0,
             0,0,0,1,1,1,1,0,0,0,
             0,0,0,1,1,1,1,0,0,0
-        ]; // Chính xác 64 ô
+        ];
 
         /* ==========================================
-           HỆ THỐNG NHẠC MP3 & ÂM THANH SFX
+           CHÚ THÍCH: HỆ THỐNG PRE-RENDERING ĐỒ HỌA MỚI
+           Thay vì vẽ gradient và vòng cung mỗi khung hình, game sẽ "chụp hình" kẹo một lần
+           và tái sử dụng để chống lag giật hoàn toàn trên điện thoại.
            ========================================== */
+        const candyCache = {};
+        function initCache() {
+            const cacheSize = 120;
+            const s = 80; 
+            const r = 40;
+
+            function createCache(key, color, special, bubblegum) {
+                let cvs = document.createElement('canvas');
+                cvs.width = cacheSize; cvs.height = cacheSize;
+                let ctx = cvs.getContext('2d');
+                ctx.translate(cacheSize/2, cacheSize/2);
+                
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetY = 3;
+
+                let cHex = hexColors[color];
+                
+                if (color === 'wood') {
+                    ctx.fillStyle = cHex[0]; ctx.strokeStyle = cHex[1]; ctx.lineWidth = 3;
+                    ctx.fillRect(-r, -r, s, s); ctx.strokeRect(-r, -r, s, s);
+                } else if (color === 'bubblegum') {
+                    ctx.fillStyle = '#ff9ff3'; 
+                    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+                    ctx.lineWidth = 3; ctx.strokeStyle = '#f368e0'; ctx.stroke();
+                    
+                    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                    ctx.beginPath(); 
+                    if (ctx.ellipse) {
+                        ctx.ellipse(-r*0.3, -r*0.3, r*0.4, r*0.2, -Math.PI/4, 0, Math.PI*2);
+                    } else {
+                        ctx.arc(-r*0.3, -r*0.3, r*0.3, 0, Math.PI*2);
+                    }
+                    ctx.fill();
+
+                    if (bubblegum === 1) {
+                        ctx.strokeStyle = 'rgba(45, 52, 54, 0.6)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(-r*0.5, r*0.5); ctx.lineTo(0, 0); ctx.lineTo(r*0.3, -r*0.6);
+                        ctx.moveTo(0, 0); ctx.lineTo(r*0.6, r*0.2);
+                        ctx.stroke();
+                    }
+                } else if (color === 'bomb') {
+                    ctx.fillStyle = cHex[0]; ctx.beginPath(); ctx.arc(0,0, r, 0, Math.PI*2); ctx.fill();
+                    ctx.lineWidth = 2; ctx.strokeStyle = cHex[1]; ctx.stroke();
+                    const pC = ['#ff7979','#f6e58d','#badc58','#7ed6df','#e056fd'];
+                    for(let i=0; i<6; i++) {
+                        ctx.fillStyle = pC[i%5]; ctx.beginPath();
+                        ctx.arc(Math.cos(i)*r*0.6, Math.sin(i)*r*0.6, r*0.15, 0, Math.PI*2); ctx.fill();
+                    }
+                } else {
+                    let grad = ctx.createRadialGradient(-r/3, -r/3, 0, 0, 0, r);
+                    grad.addColorStop(0, cHex[0]); grad.addColorStop(1, cHex[1]);
+                    ctx.fillStyle = grad;
+
+                    ctx.beginPath();
+                    if(color === 'red' || color === 'purple') {
+                        ctx.arc(0,0, r, 0, Math.PI*2); ctx.fill();
+                        if(color === 'purple') {
+                            ctx.fillStyle='rgba(255,255,255,0.4)';
+                            ctx.beginPath(); ctx.arc(-r/3, -r/3, r/4, 0, Math.PI*2); ctx.fill();
+                        }
+                    } else if (color === 'yellow') {
+                        for(let i=0; i<5; i++) {
+                            ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*r, -Math.sin((18+i*72)*Math.PI/180)*r);
+                            ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*r*0.4, -Math.sin((54+i*72)*Math.PI/180)*r*0.4);
+                        }
+                        ctx.closePath(); ctx.fill();
+                    } else if (color === 'blue' || color === 'orange') {
+                        let rectR = color==='blue'?8:r;
+                        if (ctx.roundRect) { ctx.roundRect(-r, -r, s, s, rectR); } 
+                        else { ctx.rect(-r, -r, s, s); }
+                        ctx.fill();
+                    } else if (color === 'green') {
+                        ctx.arc(0,0, r, 0, Math.PI*2);
+                        ctx.arc(0,0, r/2, 0, Math.PI*2, true); 
+                        ctx.fill();
+                    }
+                }
+
+                ctx.shadowColor = 'transparent'; 
+                if (special === 'striped-h') {
+                    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(-r, -r*0.2, s, r*0.4);
+                } else if (special === 'striped-v') {
+                    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(-r*0.2, -r, r*0.4, s);
+                } else if (special === 'wrapped') {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.beginPath(); ctx.arc(0, 0, r*1.1, 0, Math.PI*2); ctx.fill(); 
+                    ctx.beginPath(); ctx.moveTo(-r*0.6, -r*0.9); ctx.lineTo(r*0.6, -r*0.9); ctx.lineTo(0, -r*1.6); ctx.fill(); 
+                    ctx.beginPath(); ctx.moveTo(-r*0.6, r*0.9); ctx.lineTo(r*0.6, r*0.9); ctx.lineTo(0, r*1.6); ctx.fill(); 
+                    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2; ctx.stroke();
+                } else if (special === 'fish') {
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.beginPath(); ctx.moveTo(r, r); ctx.lineTo(r*0.3, r); ctx.lineTo(r, r*0.3); ctx.fill();
+                }
+
+                candyCache[key] = cvs;
+            }
+
+            candyColors.forEach(c => {
+                ['none', 'striped-h', 'striped-v', 'wrapped', 'fish'].forEach(sp => {
+                    createCache(`${c}_${sp}_0`, c, sp, 0);
+                });
+            });
+            createCache('wood_none_0', 'wood', 'none', 0);
+            createCache('bomb_color-bomb_0', 'bomb', 'color-bomb', 0);
+            createCache('bubblegum_none_1', 'bubblegum', 'none', 1);
+            createCache('bubblegum_none_2', 'bubblegum', 'none', 2);
+
+            let bgSize = 100;
+            let bgCell = document.createElement('canvas');
+            bgCell.width = bgSize; bgCell.height = bgSize;
+            let bgCtx = bgCell.getContext('2d');
+            bgCtx.fillStyle = 'rgba(230, 230, 230, 0.8)';
+            bgCtx.beginPath();
+            if (bgCtx.roundRect) bgCtx.roundRect(2, 2, bgSize-4, bgSize-4, 8);
+            else bgCtx.rect(2, 2, bgSize-4, bgSize-4);
+            bgCtx.fill();
+            candyCache['bg_cell'] = bgCell;
+
+            let jellyCell = document.createElement('canvas');
+            jellyCell.width = bgSize; jellyCell.height = bgSize;
+            let jCtx = jellyCell.getContext('2d');
+            jCtx.fillStyle = 'rgba(156, 136, 255, 0.3)';
+            jCtx.strokeStyle = '#8c7ae6'; jCtx.lineWidth = 2;
+            jCtx.beginPath();
+            if (jCtx.roundRect) jCtx.roundRect(2, 2, bgSize-4, bgSize-4, 12);
+            else jCtx.rect(2, 2, bgSize-4, bgSize-4);
+            jCtx.fill(); jCtx.stroke();
+            candyCache['jelly_cell'] = jellyCell;
+        }
+        initCache();
+
         const mp3Tracks = [
             'Lần hẹn hò đầu tiên (prod.htingale) - YouTube.mp3',
             'Moments Captured Among the Stars - YouTube.mp3',
@@ -360,9 +490,6 @@
             } catch(e) { } 
         }
 
-        /* ==========================================
-           HỆ THỐNG NÚT BẤM VÀ KỸ NĂNG HỖ TRỢ
-           ========================================== */
         const btnAction = document.getElementById('btn-action');
         btnAction.addEventListener('click', () => {
             if (gameActionState === 'NEXT_LEVEL') startLevel(currentLevel + 1);
@@ -432,7 +559,6 @@
             playSound('zap');
         });
 
-        // CHÚ THÍCH: Nerf Rainbow Combo - Chỉ biến đổi 5 kẹo trên bàn
         document.getElementById('skill-combo').addEventListener('click', () => {
             if(skillComboUsed || skillBombUsed || isProcessing || moves <= 0) return;
             skillComboUsed = true;
@@ -448,7 +574,7 @@
             
             let targets = [];
             validIdx.sort(() => Math.random() - 0.5);
-            targets = validIdx.slice(0, Math.min(5, validIdx.length)); // Tối đa 5 viên
+            targets = validIdx.slice(0, Math.min(5, validIdx.length)); 
             
             const comboTypes = ['striped-h', 'striped-v', 'wrapped', 'fish'];
             targets.forEach(idx => {
@@ -500,11 +626,8 @@
         document.getElementById('btn-help').addEventListener('click', () => document.getElementById('help-modal').style.display = 'flex');
         document.getElementById('btn-close-help').addEventListener('click', () => document.getElementById('help-modal').style.display = 'none');
 
-        /* ==========================================
-           RESIZE CANVAS (Responsive) - Nâng cấp rộng rãi hơn cho Desktop
-           ========================================== */
         function resizeCanvas() {
-            let maxW = Math.min(window.innerWidth - 20, 550); // Mở rộng thêm 1 chút cho đủ tỷ lệ 10x10
+            let maxW = Math.min(window.innerWidth - 20, 550); 
             cellSize = Math.floor((maxW - padding * 2) / width);
             const dpr = window.devicePixelRatio || 1;
             logicalWidth = width * cellSize + padding * 2;
@@ -547,9 +670,6 @@
             }
         }
 
-        /* ==========================================
-           HỆ THỐNG TẠO MÀN CHƠI THÔNG MINH
-           ========================================== */
         function generateLevelConfig(lvl) {
             let config = { 
                 level: lvl, 
@@ -634,7 +754,6 @@
                 }
             }
 
-            // CHÚ THÍCH: Tránh sinh quá nhiều vật cản để bản đồ (cố định 64 ô) không bị kẹt cứng
             let totalObstacles = config.woods + config.bubblegums;
             if (totalObstacles > 30) {
                 let excess = totalObstacles - 30;
@@ -667,14 +786,13 @@
 
             levelConfig = generateLevelConfig(lvl);
             
-            // CHÚ THÍCH: Kích hoạt Lưới Động. Nếu là ô vuông thì ép viền 8x8 để kẹo fill đầy viền
             if (levelConfig.shape === 'square') {
                 width = 8;
             } else {
                 width = 10;
             }
             totalCells = width * width;
-            resizeCanvas(); // Tính toán lại kích thước hiển thị kẹo ngay lập tức
+            resizeCanvas();
 
             document.getElementById('game-body').className = `theme-${(lvl - 1) % 3}`;
             
@@ -727,7 +845,6 @@
 
             let j = 0; while(j < levelConfig.jellies) { let r=Math.floor(Math.random()*totalCells); if(board[r].active && !board[r].jelly) {board[r].jelly=true; j++;} }
             
-            // CHÚ THÍCH: Hạn chế rớt vật cản ở các hàng trên cùng để kẹo có thể rơi dễ dàng
             let w = 0; while(w < levelConfig.woods) { let r=Math.floor(Math.random()*totalCells); if(board[r].active && Math.floor(r/width) >= 3 && !board[r].wood) {board[r].color='wood'; board[r].wood=true; w++;} }
             let bg = 0; while(bg < levelConfig.bubblegums) { 
                 let r=Math.floor(Math.random()*totalCells); 
@@ -746,99 +863,29 @@
         }
 
         /* ==========================================
-           LOGIC VẼ CANVAS ĐỒ HỌA
+           CHÚ THÍCH: HỆ THỐNG VẼ KẸO PRE-RENDERING TIẾP TỤC ĐƯỢC GIỮ VÀ ỨNG DỤNG
+           ĐỂ TỐI ƯU FPS TRÊN ĐIỆN THOẠI
            ========================================== */
         function drawCandyShape(ctx, cell, x, y, size, scale, isHint) {
             if(!cell.active || scale <= 0) return; 
-            let color = cell.color;
-            let special = cell.special;
+            
+            let key = `${cell.color}_${cell.special}_${cell.bubblegum || 0}`;
+            let cachedImg = candyCache[key];
+            if (!cachedImg) return;
 
             ctx.save();
             ctx.translate(x + size/2, y + size/2);
             ctx.scale(scale, scale);
-            let s = size * 0.8; let r = s / 2;
 
-            ctx.shadowColor = isHint ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.3)';
-            ctx.shadowBlur = isHint ? 15 : 4;
-            ctx.shadowOffsetY = isHint ? 0 : 3;
+            if (isHint) {
+                ctx.shadowColor = 'rgba(255,255,255,0.8)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetY = 0;
+            }
 
-            let cHex = hexColors[color];
+            let renderSize = size * 1.2;
+            ctx.drawImage(cachedImg, -renderSize/2, -renderSize/2, renderSize, renderSize);
             
-            if (color === 'wood') {
-                ctx.fillStyle = cHex[0]; ctx.strokeStyle = cHex[1]; ctx.lineWidth = 3;
-                ctx.fillRect(-r, -r, s, s); ctx.strokeRect(-r, -r, s, s);
-            } else if (color === 'bubblegum') {
-                ctx.fillStyle = '#ff9ff3'; 
-                ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
-                ctx.lineWidth = 3; ctx.strokeStyle = '#f368e0'; ctx.stroke();
-                
-                ctx.fillStyle = 'rgba(255,255,255,0.6)';
-                ctx.beginPath(); ctx.ellipse(-r*0.3, -r*0.3, r*0.4, r*0.2, -Math.PI/4, 0, Math.PI*2); ctx.fill();
-
-                if (cell.bubblegum === 1) {
-                    ctx.strokeStyle = 'rgba(45, 52, 54, 0.6)';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(-r*0.5, r*0.5);
-                    ctx.lineTo(0, 0);
-                    ctx.lineTo(r*0.3, -r*0.6);
-                    ctx.moveTo(0, 0);
-                    ctx.lineTo(r*0.6, r*0.2);
-                    ctx.stroke();
-                }
-            } else if (color === 'bomb') {
-                ctx.fillStyle = cHex[0]; ctx.beginPath(); ctx.arc(0,0, r, 0, Math.PI*2); ctx.fill();
-                ctx.lineWidth = 2; ctx.strokeStyle = cHex[1]; ctx.stroke();
-                const pC = ['#ff7979','#f6e58d','#badc58','#7ed6df','#e056fd'];
-                for(let i=0; i<6; i++) {
-                    ctx.fillStyle = pC[i%5]; ctx.beginPath();
-                    ctx.arc(Math.cos(i)*r*0.6, Math.sin(i)*r*0.6, r*0.15, 0, Math.PI*2); ctx.fill();
-                }
-            } else {
-                let grad = ctx.createRadialGradient(-r/3, -r/3, 0, 0, 0, r);
-                grad.addColorStop(0, cHex[0]); grad.addColorStop(1, cHex[1]);
-                ctx.fillStyle = grad;
-
-                ctx.beginPath();
-                if(color === 'red' || color === 'purple') {
-                    ctx.arc(0,0, r, 0, Math.PI*2); ctx.fill();
-                    if(color === 'purple') {
-                        ctx.fillStyle='rgba(255,255,255,0.4)';
-                        ctx.beginPath(); ctx.arc(-r/3, -r/3, r/4, 0, Math.PI*2); ctx.fill();
-                    }
-                } else if (color === 'yellow') {
-                    for(let i=0; i<5; i++) {
-                        ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*r, -Math.sin((18+i*72)*Math.PI/180)*r);
-                        ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*r*0.4, -Math.sin((54+i*72)*Math.PI/180)*r*0.4);
-                    }
-                    ctx.closePath(); ctx.fill();
-                } else if (color === 'blue' || color === 'orange') {
-                    let rectR = color==='blue'?8:r;
-                    if (ctx.roundRect) { ctx.roundRect(-r, -r, s, s, rectR); } 
-                    else { ctx.rect(-r, -r, s, s); }
-                    ctx.fill();
-                } else if (color === 'green') {
-                    ctx.arc(0,0, r, 0, Math.PI*2);
-                    ctx.arc(0,0, r/2, 0, Math.PI*2, true); 
-                    ctx.fill();
-                }
-            }
-
-            ctx.shadowColor = 'transparent'; 
-            if (special === 'striped-h') {
-                ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(-r, -r*0.2, s, r*0.4);
-            } else if (special === 'striped-v') {
-                ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(-r*0.2, -r, r*0.4, s);
-            } else if (special === 'wrapped') {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.beginPath(); ctx.arc(0, 0, r*1.1, 0, Math.PI*2); ctx.fill(); 
-                ctx.beginPath(); ctx.moveTo(-r*0.6, -r*0.9); ctx.lineTo(r*0.6, -r*0.9); ctx.lineTo(0, -r*1.6); ctx.fill(); 
-                ctx.beginPath(); ctx.moveTo(-r*0.6, r*0.9); ctx.lineTo(r*0.6, r*0.9); ctx.lineTo(0, r*1.6); ctx.fill(); 
-                ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2; ctx.stroke();
-            } else if (special === 'fish') {
-                ctx.fillStyle = 'rgba(255,255,255,0.8)';
-                ctx.beginPath(); ctx.moveTo(r, r); ctx.lineTo(r*0.3, r); ctx.lineTo(r, r*0.3); ctx.fill();
-            }
             ctx.restore();
         }
 
@@ -851,19 +898,11 @@
 
                 let col = i % width; let row = Math.floor(i / width);
                 let x = padding + col * cellSize; let y = padding + row * cellSize;
-                ctx.fillStyle = 'rgba(230, 230, 230, 0.8)';
-                ctx.beginPath(); 
-                if (ctx.roundRect) ctx.roundRect(x+2, y+2, cellSize-4, cellSize-4, 8);
-                else ctx.rect(x+2, y+2, cellSize-4, cellSize-4);
-                ctx.fill();
+                
+                ctx.drawImage(candyCache['bg_cell'], x, y, cellSize, cellSize);
                 
                 if(board[i] && board[i].jelly) {
-                    ctx.fillStyle = 'rgba(156, 136, 255, 0.3)';
-                    ctx.strokeStyle = '#8c7ae6'; ctx.lineWidth = 2;
-                    ctx.beginPath(); 
-                    if(ctx.roundRect) ctx.roundRect(x+2, y+2, cellSize-4, cellSize-4, 12);
-                    else ctx.rect(x+2, y+2, cellSize-4, cellSize-4);
-                    ctx.fill(); ctx.stroke();
+                    ctx.drawImage(candyCache['jelly_cell'], x, y, cellSize, cellSize);
                 }
             }
 
@@ -880,26 +919,31 @@
                 });
             }
 
+            // CHÚ THÍCH: Fast Glow Engine để thay thế Shadow Blur truyền thống
             for(let i=explosions.length-1; i>=0; i--) {
                 let e = explosions[i];
                 e.life -= 0.05;
                 if(e.life <= 0) { explosions.splice(i, 1); continue; }
                 
-                ctx.globalAlpha = e.life;
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.shadowColor = '#fff';
-                ctx.shadowBlur = 20;
-                
                 if (e.type === 'beam-h') {
-                    ctx.fillRect(0, e.y - 10 * (e.scale||1), logicalWidth, 20 * (e.scale||1));
+                    let h = 20 * (e.scale||1);
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + (e.life * 0.3) + ')';
+                    ctx.fillRect(0, e.y - h, logicalWidth, h * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + e.life + ')';
+                    ctx.fillRect(0, e.y - h/2, logicalWidth, h);
                 } else if (e.type === 'beam-v') {
-                    ctx.fillRect(e.x - 10 * (e.scale||1), 0, 20 * (e.scale||1), logicalWidth);
+                    let w = 20 * (e.scale||1);
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + (e.life * 0.3) + ')';
+                    ctx.fillRect(e.x - w, 0, w * 2, logicalWidth);
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + e.life + ')';
+                    ctx.fillRect(e.x - w/2, 0, w, logicalWidth);
                 } else if (e.type === 'blast') {
                     e.radius += 8;
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + (e.life * 0.3) + ')';
+                    ctx.beginPath(); ctx.arc(e.x, e.y, e.radius * 1.5, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + e.life + ')';
                     ctx.beginPath(); ctx.arc(e.x, e.y, e.radius, 0, Math.PI*2); ctx.fill();
                 }
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1;
             }
 
             for(let i=particles.length-1; i>=0; i--) {
@@ -918,20 +962,24 @@
                 l.life -= 0.05;
                 if(l.life <= 0) { lasers.splice(i, 1); continue; }
                 
-                ctx.strokeStyle = l.color; ctx.lineWidth = (l.width || 8) * l.life; ctx.lineCap = 'round';
-                ctx.shadowColor = l.color; ctx.shadowBlur = 10;
-                ctx.globalAlpha = l.life;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = l.color; 
+                ctx.globalAlpha = l.life * 0.4;
+                ctx.lineWidth = (l.width || 8) * l.life * 2.5;
                 ctx.beginPath(); ctx.moveTo(l.startX, l.startY); ctx.lineTo(l.endX, l.endY); ctx.stroke();
-                ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+                
+                ctx.globalAlpha = l.life;
+                ctx.strokeStyle = '#ffffff'; 
+                ctx.lineWidth = (l.width || 8) * l.life * 0.8;
+                ctx.beginPath(); ctx.moveTo(l.startX, l.startY); ctx.lineTo(l.endX, l.endY); ctx.stroke();
+                
+                ctx.globalAlpha = 1;
             }
 
             requestAnimationFrame(gameLoop);
         }
         requestAnimationFrame(gameLoop);
 
-        /* ==========================================
-           SỰ KIỆN CHẠM/VUỐT TRÊN CANVAS 
-           ========================================== */
         function getGridIdx(clientX, clientY) {
             let rect = canvas.getBoundingClientRect();
             let x = clientX - rect.left - padding;
@@ -1247,7 +1295,6 @@
                     }
                 }
                 else if (spec === 'color-bomb') {
-                    // CHÚ THÍCH: Tính năng tự động kích nổ Combo (Ví dụ: Bom dính vùng nổ của Kẹo Sọc)
                     playSound('laser');
                     let availableColors = ['red', 'yellow', 'blue', 'green', 'purple', 'orange'].filter(c => 
                         board.some(b => b.active && b.color === c)
@@ -1389,7 +1436,6 @@
                 else { 
                     isProcessing = false; 
                     checkWinLose(); 
-                    // Kiểm tra hết nước đi nếu không bị hiện màn hình thắng thua
                     if (!document.getElementById('overlay').style.display || document.getElementById('overlay').style.display === 'none') {
                         checkDeadlock(); 
                     }
@@ -1398,12 +1444,10 @@
             }, 350); 
         }
 
-        // CHÚ THÍCH: Gộp chung thuật toán tìm nước đi để xài cho cả 2 tính năng (Hint & Deadlock)
         function getPossibleMove() {
             for(let i=0; i<totalCells; i++) {
                 if(!board[i] || !board[i].active||board[i].color==='none'||board[i].wood||board[i].bubblegum>0) continue;
                 
-                // Thử đổi sang phải
                 if(i % width < width - 1 && board[i+1] && board[i+1].active && board[i+1].color !== 'none' && !board[i+1].wood && board[i+1].bubblegum === 0) {
                     if(board[i].special === 'color-bomb' || board[i+1].special === 'color-bomb') return [i, i+1];
                     let tc=board[i].color, ts=board[i].special; board[i].color=board[i+1].color; board[i].special=board[i+1].special; board[i+1].color=tc; board[i+1].special=ts;
@@ -1411,7 +1455,7 @@
                     tc=board[i].color; ts=board[i].special; board[i].color=board[i+1].color; board[i].special=board[i+1].special; board[i+1].color=tc; board[i+1].special=ts;
                     if(matches.all.size>0) return [i, i+1];
                 }
-                // Thử đổi xuống dưới
+                
                 if(i < totalCells - width && board[i+width] && board[i+width].active && board[i+width].color !== 'none' && !board[i+width].wood && board[i+width].bubblegum === 0) {
                     if(board[i].special === 'color-bomb' || board[i+width].special === 'color-bomb') return [i, i+width];
                     let tc=board[i].color, ts=board[i].special; board[i].color=board[i+width].color; board[i].special=board[i+width].special; board[i+width].color=tc; board[i+width].special=ts;
@@ -1423,7 +1467,6 @@
             return null;
         }
 
-        // CHÚ THÍCH: Hệ thống kiểm tra và xáo trộn lại kẹo nếu bị deadlock
         function checkDeadlock() {
             if (moves <= 0 || isProcessing) return;
             let move = getPossibleMove();
@@ -1459,7 +1502,6 @@
                 }
             }
             
-            // Thuật toán trộn mảng
             for (let i = movableCandies.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [movableCandies[i], movableCandies[j]] = [movableCandies[j], movableCandies[i]];
@@ -1470,7 +1512,7 @@
                 if(board[i] && board[i].active && board[i].color !== 'none' && !board[i].wood && board[i].bubblegum === 0) {
                     board[i].color = movableCandies[idx].color;
                     board[i].special = movableCandies[idx].special;
-                    board[i].scale = 0; // Animation pop in
+                    board[i].scale = 0; 
                     idx++;
                 }
             }
@@ -1480,7 +1522,7 @@
                 if(matches.all.size > 0) processMatches(matches, -1, -1);
                 else {
                     isProcessing = false;
-                    checkDeadlock(); // Trộn lại nếu vẫn hết đường
+                    checkDeadlock(); 
                     resetHintTimer();
                 }
             }, 500);
